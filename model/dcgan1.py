@@ -15,9 +15,14 @@ def weights_init(m):
         nn.init.constant_(m.bias.data, 0)
         
 class Generator(nn.Module):
-    def __init__(self, ngpu):
+    def __init__(self, config):
+        super().__init__(config)
         super(Generator, self).__init__()
-        self.ngpu = ngpu
+        self.ngpu = self.config.train.ngpu
+        nz = self.config.train.nz
+        ngf = self.config.train.ngf
+        nc = self.config.train.nc
+        self.device = torch.device("cuda:0" if (torch.cuda.is_available() and self.ngpu > 0) else "cpu")
         self.main = nn.Sequential(
             # input is Z, going into a convolution
             nn.ConvTranspose2d( nz, ngf * 8, 4, 1, 0, bias=False),
@@ -43,14 +48,33 @@ class Generator(nn.Module):
 
     def forward(self, input):
         return self.main(input)
+    
+    def build(self):
+        # Create the Discriminator
+        netD = Discriminator(self.ngpu).to(self.device)
+
+        # Handle multi-gpu if desired
+        if (self.device.type == 'cuda') and (self.ngpu > 1):
+            netD = nn.DataParallel(netD, list(range(self.ngpu)))
+
+        # Apply the weights_init function to randomly initialize all weights
+        #  to mean=0, stdev=0.2.
+        netD.apply(weights_init)
+
+        # Print the model
+        return netD
 
 
 #discriminator
 
 class Discriminator(nn.Module):
-    def __init__(self, ngpu):
+    def __init__(self, config):
+        super().__init__(config)
         super(Discriminator, self).__init__()
-        self.ngpu = ngpu
+        self.ngpu = self.config.train.ngpu
+        nc = self.config.train.nc
+        ndf = self.config.train.ndf
+        self.device = torch.device("cuda:0" if (torch.cuda.is_available() and self.ngpu > 0) else "cpu")
         self.main = nn.Sequential(
             # input is (nc) x 64 x 64
             nn.Conv2d(nc, ndf, 4, 2, 1, bias=False),
@@ -74,3 +98,20 @@ class Discriminator(nn.Module):
 
     def forward(self, input):
         return self.main(input)
+
+    def build(self):
+        # Create the generator
+        netG = Generator(self.ngpu).to(self.device)
+
+        # Handle multi-gpu if desired
+        if (self.device.type == 'cuda') and (self.ngpu > 1):
+            netG = nn.DataParallel(netG, list(range(self.ngpu)))
+
+        # Apply the weights_init function to randomly initialize all weights
+        #  to mean=0, stdev=0.02.
+        netG.apply(weights_init)
+
+        # Print the model
+        return netG
+    
+    

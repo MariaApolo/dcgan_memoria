@@ -23,7 +23,8 @@ CFG = {
             "beta1": 0.5 # Beta1 hyperparam for Adam optimizers
         },
         "metrics": ["accuracy"],
-        "ngpu": 1
+        "ngpu": 1,
+        
     },
     "model": {
         "input": [128, 128, 3],
