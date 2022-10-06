@@ -14,16 +14,16 @@ CFG = {
         "ngf": 64, # Size of feature maps in generator
         "ndf": 64, # Size of feature maps in discriminator
         #"buffer_size": 1000 #to shuffle images
-        "epoches": 1000,
+        "num_epochs": 1000,
         "lr": 0.0002,
-
+        "ngpu": 1,
         #"val_subsplits": 5,
         "optimizer": {
             "type": "adam",
             "beta1": 0.5 # Beta1 hyperparam for Adam optimizers
         },
         "metrics": ["accuracy"],
-        "ngpu": 1,
+
         
     },
     "model": {

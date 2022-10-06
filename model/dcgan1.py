@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from utils.config import Config
 
 #generator
 
@@ -16,12 +17,13 @@ def weights_init(m):
         
 class Generator(nn.Module):
     def __init__(self, config):
-        super().__init__(config)
+        self.cfg = config
+        self.config = Config.from_json(self.cfg)
         super(Generator, self).__init__()
-        self.ngpu = self.config.train.ngpu
-        nz = self.config.train.nz
-        ngf = self.config.train.ngf
-        nc = self.config.train.nc
+        self.ngpu = self.config.train["ngpu"]
+        nz = self.config.train["nz"]
+        ngf = self.config.train["ngf"]
+        nc = self.config.train["nc"]
         self.device = torch.device("cuda:0" if (torch.cuda.is_available() and self.ngpu > 0) else "cpu")
         self.main = nn.Sequential(
             # input is Z, going into a convolution
@@ -50,30 +52,33 @@ class Generator(nn.Module):
         return self.main(input)
     
     def build(self):
-        # Create the Discriminator
-        netD = Discriminator(self.ngpu).to(self.device)
+                # Create the generator
+        netG = Generator(self.cfg).to(self.device)
 
         # Handle multi-gpu if desired
         if (self.device.type == 'cuda') and (self.ngpu > 1):
-            netD = nn.DataParallel(netD, list(range(self.ngpu)))
+            netG = nn.DataParallel(netG, list(range(self.ngpu)))
 
         # Apply the weights_init function to randomly initialize all weights
-        #  to mean=0, stdev=0.2.
-        netD.apply(weights_init)
+        #  to mean=0, stdev=0.02.
+        netG.apply(weights_init)
 
         # Print the model
-        return netD
+        return netG
+
 
 
 #discriminator
 
 class Discriminator(nn.Module):
     def __init__(self, config):
-        super().__init__(config)
+        self.cfg = config
+        self.config = Config.from_json(self.cfg)
         super(Discriminator, self).__init__()
-        self.ngpu = self.config.train.ngpu
-        nc = self.config.train.nc
-        ndf = self.config.train.ndf
+
+        self.ngpu = self.config.train["ngpu"]
+        nc = self.config.train["nc"]
+        ndf = self.config.train["ndf"]
         self.device = torch.device("cuda:0" if (torch.cuda.is_available() and self.ngpu > 0) else "cpu")
         self.main = nn.Sequential(
             # input is (nc) x 64 x 64
@@ -100,18 +105,20 @@ class Discriminator(nn.Module):
         return self.main(input)
 
     def build(self):
-        # Create the generator
-        netG = Generator(self.ngpu).to(self.device)
+
+                # Create the Discriminator
+        netD = Discriminator(self.cfg).to(self.device)
 
         # Handle multi-gpu if desired
         if (self.device.type == 'cuda') and (self.ngpu > 1):
-            netG = nn.DataParallel(netG, list(range(self.ngpu)))
+            netD = nn.DataParallel(netD, list(range(self.ngpu)))
 
         # Apply the weights_init function to randomly initialize all weights
-        #  to mean=0, stdev=0.02.
-        netG.apply(weights_init)
+        #  to mean=0, stdev=0.2.
+        netD.apply(weights_init)
 
         # Print the model
-        return netG
+        return netD
+
     
     
