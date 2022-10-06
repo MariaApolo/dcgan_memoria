@@ -3,7 +3,7 @@
 
 CFG = {
     "data": {
-        "dataroot":'/content/drive/Shared drives/SpotifyMemoria/MM_full/Knn/', #data folder
+        "dataroot":'C:/Users/digevo/Documents/USM/Memoria/dataset_prueba/', #data folder
         "image_size": 64, #all images will be resized to this
         "workers": 2, #num of workers for dataloader
     },
